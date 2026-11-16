@@ -3,8 +3,6 @@ on:
   push:
     branches:
       - master
-  repository_dispatch:
-    types: [upptime]
   schedule:
     - cron: "0 * * * *"
   workflow_dispatch:
@@ -14,9 +12,18 @@ jobs:
     name: Check status of sites
     runs-on: ubuntu-latest
     steps:
-      - name: Upptime
-        uses: upptime/upptime@master
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
         with:
-          ASSIGNEES: nonekoy
+          node-version: 20
+
+      - name: Install uptime monitor
+        run: npm install -g @upptime/uptime-monitor
+
+      - name: Update status
+        run: uptime-monitor summary
         env:
           GH_PAT: ${{ secrets.GH_PAT }}
+          OWNER: nonekoy
+          REPO: velox-status

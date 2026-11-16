@@ -8,10 +8,18 @@ jobs:
   update:
     runs-on: ubuntu-latest
     steps:
-      - name: Upptime
-        uses: upptime/upptime@master
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
         with:
-          ASSIGNEES: nonekoy
-          UPDATE_TEMPLATE: true
+          node-version: 20
+
+      - name: Install uptime monitor
+        run: npm install -g @upptime/uptime-monitor
+
+      - name: Update template
+        run: uptime-monitor update-template
         env:
           GH_PAT: ${{ secrets.GH_PAT }}
+          OWNER: nonekoy
+          REPO: velox-status
