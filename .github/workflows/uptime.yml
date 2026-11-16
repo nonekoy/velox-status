@@ -21,11 +21,8 @@ jobs:
         with:
           node-version: 22
 
-      - name: Install uptime monitor
-        run: npm install -g @upptime/uptime-monitor
-
       - name: Update status
-        run: uptime-monitor update-status
+        run: npx --yes @upptime/uptime-monitor update-status
         env:
           GH_PAT: ${{ secrets.GH_PAT }}
           OWNER: nonekoy
