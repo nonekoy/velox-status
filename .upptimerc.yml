@@ -1,0 +1,16 @@
+owner: nonekoy
+repo: velox-status
+userAgent: Upptime/1.0
+
+sites:
+  - name: CRM Velox
+    url: https://crm.veloximobi.com.br
+  - name: API Velox
+    url: https://api.veloximobi.com.br/health/
+  - name: Portal Velox
+    url: https://portal.connectedbrokers.com.br
+
+status-website:
+  cname: status.veloximobi.com.br
+  name: Status Velox
+  theme: light

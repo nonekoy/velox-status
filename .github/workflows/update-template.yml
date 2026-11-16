@@ -1,0 +1,17 @@
+name: Update Template
+on:
+  schedule:
+    - cron: "0 0 * * 0"
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Upptime
+        uses: upptime/upptime@master
+        with:
+          ASSIGNEES: nonekoy
+          UPDATE_TEMPLATE: true
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
