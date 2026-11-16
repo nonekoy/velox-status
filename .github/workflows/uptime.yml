@@ -1,29 +1,96 @@
 name: Uptime CI
 on:
-  push:
-    branches:
-      - master
   schedule:
     - cron: "0 * * * *"
   workflow_dispatch:
+  push:
+    branches: [master]
 
 jobs:
-  summary:
-    name: Check status of sites
+  check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install libcurl
-        run: sudo apt-get install -y libcurl4-openssl-dev
+      - name: Check services
+        id: checks
+        run: |
+          check() {
+            local url="$1"
+            local code
+            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$url" 2>/dev/null || echo "000")
+            if [ "$code" -ge 200 ] && [ "$code" -lt 400 ]; then
+              echo "up"
+            else
+              echo "down ($code)"
+            fi
+          }
 
-      - uses: actions/setup-node@v4
+          CRM=$(check "https://crm.veloximobi.com.br")
+          API=$(check "https://api.veloximobi.com.br/health/")
+          PORTAL=$(check "https://portal.connectedbrokers.com.br")
+
+          echo "crm=$CRM"       >> "$GITHUB_OUTPUT"
+          echo "api=$API"       >> "$GITHUB_OUTPUT"
+          echo "portal=$PORTAL" >> "$GITHUB_OUTPUT"
+
+      - name: Generate status page
+        run: |
+          CRM="${{ steps.checks.outputs.crm }}"
+          API="${{ steps.checks.outputs.api }}"
+          PORTAL="${{ steps.checks.outputs.portal }}"
+          NOW=$(date -u "+%d/%m/%Y %H:%M UTC")
+
+          badge() {
+            if [ "$1" = "up" ]; then
+              echo '<span class="badge up">Operacional</span>'
+            else
+              echo "<span class=\"badge down\">Fora do ar — $1</span>"
+            fi
+          }
+
+          mkdir -p public
+          cat > public/index.html <<HTML
+          <!DOCTYPE html>
+          <html lang="pt-BR">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>Status Velox</title>
+            <style>
+              body { font-family: system-ui, sans-serif; max-width: 640px; margin: 60px auto; padding: 0 20px; color: #1a1a1a; }
+              h1 { font-size: 1.5rem; margin-bottom: 4px; }
+              .updated { color: #888; font-size: .85rem; margin-bottom: 32px; }
+              .service { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid #eee; }
+              .service:last-child { border-bottom: none; }
+              .name { font-weight: 500; }
+              .badge { padding: 4px 12px; border-radius: 999px; font-size: .8rem; font-weight: 600; }
+              .up { background: #d1fae5; color: #065f46; }
+              .down { background: #fee2e2; color: #991b1b; }
+            </style>
+          </head>
+          <body>
+            <h1>Status Velox</h1>
+            <p class="updated">Atualizado em $NOW</p>
+            <div class="service">
+              <span class="name">CRM</span>
+              $(badge "$CRM")
+            </div>
+            <div class="service">
+              <span class="name">API</span>
+              $(badge "$API")
+            </div>
+            <div class="service">
+              <span class="name">Portal</span>
+              $(badge "$PORTAL")
+            </div>
+          </body>
+          </html>
+          HTML
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          node-version: 22
-
-      - name: Update status
-        run: npx --yes @upptime/uptime-monitor update-status
-        env:
-          GH_PAT: ${{ secrets.GH_PAT }}
-          OWNER: nonekoy
-          REPO: velox-status
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./public
+          cname: status.veloximobi.com.br
