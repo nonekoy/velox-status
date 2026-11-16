@@ -16,13 +16,13 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
 
       - name: Install uptime monitor
         run: npm install -g @upptime/uptime-monitor
 
       - name: Update status
-        run: uptime-monitor summary
+        run: uptime-monitor update-status
         env:
           GH_PAT: ${{ secrets.GH_PAT }}
           OWNER: nonekoy
